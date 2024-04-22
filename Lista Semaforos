@@ -1,0 +1,98 @@
+Atividade 1: Contador Multithreaded
+
+Copy code
+import threading
+
+class Contador:
+    def __init__(self, limite):
+        self.limite = limite
+        self.contador = 0
+        self.semaphore = threading.Semaphore()
+
+    def incrementar(self):
+        while self.contador < self.limite:
+            self.semaphore.acquire()
+            self.contador += 1
+            print(f"Contador: {self.contador}")
+            self.semaphore.release()
+
+def main():
+    limite = int(input("Digite o limite do contador: "))
+    contador = Contador(limite)
+
+    threads = []
+    for _ in range(limite):
+        t = threading.Thread(target=contador.incrementar)
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    print("Contagem concluída. Valor final do contador:", contador.contador)
+
+if __name__ == "__main__":
+    main()
+
+
+-----------------------------------------------------------------------------------------------------------
+
+
+
+
+Atividade 2: Produtor-Consumidor com Buffer Limitado
+
+import threading
+import time
+import random
+
+class Buffer:
+    def __init__(self, capacidade):
+        self.capacidade = capacidade
+        self.buffer = []
+        self.semaphore = threading.Semaphore()
+        self.produtor_sem = threading.Semaphore(capacidade)
+        self.consumidor_sem = threading.Semaphore(0)
+
+    def adicionar_item(self, item):
+        self.produtor_sem.acquire()
+        self.semaphore.acquire()
+        self.buffer.append(item)
+        print(f"Item produzido: {item}")
+        self.semaphore.release()
+        self.consumidor_sem.release()
+
+    def remover_item(self):
+        self.consumidor_sem.acquire()
+        self.semaphore.acquire()
+        item = self.buffer.pop(0)
+        print(f"Item consumido: {item}")
+        self.semaphore.release()
+        self.produtor_sem.release()
+
+def produtor(buffer):
+    while True:
+        item = random.randint(1, 100)
+        buffer.adicionar_item(item)
+        time.sleep(random.uniform(0.1, 0.5))
+
+def consumidor(buffer):
+    while True:
+        buffer.remover_item()
+        time.sleep(random.uniform(0.1, 0.5))
+
+def main():
+    capacidade = int(input("Digite a capacidade do buffer: "))
+    buffer = Buffer(capacidade)
+
+    produtor_thread = threading.Thread(target=produtor, args=(buffer,))
+    consumidor_thread = threading.Thread(target=consumidor, args=(buffer,))
+
+    produtor_thread.start()
+    consumidor_thread.start()
+
+    produtor_thread.join()
+    consumidor_thread.join()
+
+if __name__ == "__main__":
+    main()
